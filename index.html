@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniMetaWallet</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+<div class="background"></div>
+
+<main class="card">
+<h1>MiniMetaWallet</h1>
+<p class="muted">Ваш локальный Ethereum / BNB кошелёк. Приватные ключи не покидают браузер.</p>
+
+<div class="controls">
+<button id="btnNew" class="btn primary">Создать кошелёк</button>
+<button id="btnImport" class="btn secondary">Импорт кошелька</button>
+</div>
+
+<section id="walletPanel" class="panel" hidden>
+<h2>Кошелёк</h2>
+
+<label>Выберите сеть:
+  <select id="networkSelect" class="selectNetwork">
+    <option value="ETH">Ethereum</option>
+    <option value="BSC">BNB Smart Chain</option>
+  </select>
+</label>
+
+<label>Адрес: <div id="address" class="mono"></div></label>
+
+<label>Seed-фраза:
+  <div id="mnemonic" class="mnemonic"></div>
+  <button id="btnReveal" class="btn small">Скрыть/Показать seed</button>
+</label>
+
+<label>Пароль для шифрования (для локального хранения):</label>
+<input id="password" type="password" placeholder="Придумайте пароль" />
+<button id="btnSaveLocal" class="btn primary">Сохранить локально</button>
+
+<div class="actions">
+<button id="btnShowPK" class="btn warn">Показать приватный ключ</button>
+<button id="btnSend" class="btn secondary">Отправить токены</button>
+</div>
+
+<div class="balanceBlock">
+<h4>Баланс</h4>
+<div id="balance" class="mono">—</div>
+</div>
+
+<div id="sendPanel" hidden>
+<h4>Отправка токенов</h4>
+<input id="recipient" type="text" placeholder="Адрес получателя" />
+<input id="amount" type="text" placeholder="Сумма в ETH/BNB" />
+<button id="btnSendTx" class="btn primary">Отправить</button>
+<div id="txResult" class="muted"></div>
+</div>
+
+</section>
+
+<!-- Модальное окно для импорта кошелька -->
+<div id="importModal" class="modal" hidden>
+  <div class="modal-content">
+    <h3>Импорт кошелька</h3>
+    <textarea id="importSeed" placeholder="Введите seed-фразу"></textarea>
+    <button id="btnImportConfirm" class="btn primary">Импортировать</button>
+    <button id="btnImportCancel" class="btn secondary">Отмена</button>
+  </div>
+</div>
+
+</main>
+<script src="script.js"></script>
+</body>
+</html>
