@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MySafe — простой локальный Ethereum-кошелёк</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <!-- ethers.js v5 (для генерации кошелька, mnemonic, шифрования) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <main class="card">
+    <h1>MySafe — локальный Ethereum-кошелёк</h1>
+    <p class="muted">Всё выполняется в вашем браузере. Приватные ключи не отправляются на сервер.</p>
+
+    <div class="controls">
+      <button id="btnCreate" class="btn primary">Создать новый кошелёк</button>
+      <button id="btnShowBalance" class="btn" disabled>Показать баланс</button>
+    </div>
+
+    <section class="panel" id="walletPanel" hidden>
+      <h2>Информация о кошельке</h2>
+
+      <label>Адрес:
+        <div id="address" class="mono"></div>
+      </label>
+
+      <label>Seed‑фраза (запиши и держи в безопасности):
+        <div id="mnemonic" class="mnemonic"></div>
+        <button id="btnReveal" class="btn small">Скрыть/Показать seed</button>
+      </label>
+
+      <div class="verify">
+        <p>Проверьте, что вы записали seed: введите указанные слова</p>
+        <div class="row">
+          <input id="verifyIdx1" type="text" placeholder="слово #?" readonly />
+          <input id="verifyWord1" type="text" placeholder="введите слово" />
+        </div>
+        <div class="row">
+          <input id="verifyIdx2" type="text" placeholder="слово #?" readonly />
+          <input id="verifyWord2" type="text" placeholder="введите слово" />
+        </div>
+        <button id="btnVerify" class="btn">Проверить seed</button>
+        <div id="verifyResult" class="muted"></div>
+      </div>
+
+      <div class="encrypt">
+        <h3>Создать зашифрованный keystore (JSON)</h3>
+        <input id="password" type="password" placeholder="Придумайте пароль (мин. 8 символов)" />
+        <input id="password2" type="password" placeholder="Повторите пароль" />
+        <button id="btnEncrypt" class="btn primary">Зашифровать и скачать keystore</button>
+        <div id="encryptStatus" class="muted"></div>
+      </div>
+
+      <div class="actions">
+        <button id="btnShowPK" class="btn warn">Показать приватный ключ (опасно)</button>
+        <button id="btnDownloadRaw" class="btn">Скачать приватный ключ (.txt)</button>
+      </div>
+
+      <div class="balanceBlock">
+        <h4>Баланс</h4>
+        <div id="balance" class="mono">—</div>
+      </div>
+    </section>
+
+    <section class="panel" id="notes">
+      <h3>Советы по безопасности</h3>
+      <ul>
+        <li>Seed‑фраза даёт полный доступ к средствам — запишите её офлайн и храните в надёжном месте.</li>
+        <li>Не делитесь приватным ключом и keystore-файлом с кем‑либо.</li>
+        <li>Этот сайт — клиентский. Если вы вводите реальные средства, используйте проверенные кошельки и апдейты.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
