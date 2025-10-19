@@ -18,7 +18,7 @@
     <button id="btnNew" class="btn primary">Создать кошелёк</button>
     <button id="btnImport" class="btn secondary">Импорт кошелька</button>
 
-    <!-- Пароль для создания / импорта -->
+    <!-- Пароль -->
     <div id="passwordBlock" style="margin-top:15px; display:none;">
       <input id="newPassword" type="password" placeholder="Пароль (мин. 8 символов)" />
       <input id="repeatPassword" type="password" placeholder="Повторите пароль" />
@@ -70,9 +70,12 @@
 
   <!-- Панель отправки -->
   <section id="sendPanel" class="panel" hidden>
-    <h3>Отправить транзакцию</h3>
+    <h3>Отправить</h3>
+    <label>Токен:
+      <select id="tokenSelect"></select>
+    </label>
     <input id="recipient" placeholder="Адрес получателя" />
-    <input id="amount" placeholder="Сумма (в ETH/BNB)" />
+    <input id="amount" placeholder="Сумма" />
     <button id="btnSendTx" class="btn primary">🚀 Отправить</button>
     <div id="txResult" class="mono"></div>
   </section>
@@ -89,7 +92,6 @@
 
 </main>
 
-<!-- Toast -->
 <div id="toast" class="toast" hidden>Адрес скопирован ✅</div>
 
 <script src="script.js"></script>
