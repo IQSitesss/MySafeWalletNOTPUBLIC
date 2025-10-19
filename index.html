@@ -13,19 +13,16 @@
   <h1>MiniMetaWallet</h1>
   <p class="muted">Локальный Ethereum / BNB кошелёк. Приватные ключи не покидают браузер.</p>
 
-  <!-- Основные действия -->
   <div class="controls" id="startControls">
     <button id="btnNew" class="btn primary">Создать кошелёк</button>
     <button id="btnImport" class="btn secondary">Импорт кошелька</button>
 
-    <!-- Пароль -->
     <div id="passwordBlock" style="margin-top:15px; display:none;">
       <input id="newPassword" type="password" placeholder="Пароль (мин. 8 символов)" />
       <input id="repeatPassword" type="password" placeholder="Повторите пароль" />
       <button id="btnConfirmPassword" class="btn primary">Продолжить</button>
     </div>
 
-    <!-- Импорт -->
     <div id="importBlock" style="margin-top:15px; display:none;">
       <textarea id="importSeed" placeholder="Введите seed-фразу"></textarea>
       <button id="btnImportConfirm" class="btn primary">Импортировать</button>
@@ -33,13 +30,11 @@
     </div>
   </div>
 
-  <!-- Загрузка -->
   <div id="loadingBlock" class="panel" hidden>
     <h3>Ожидайте…</h3>
     <div class="loader"></div>
   </div>
 
-  <!-- Панель кошелька -->
   <section id="walletPanel" class="panel" hidden>
     <h2>Кошелёк</h2>
 
@@ -60,7 +55,7 @@
 
     <div class="balanceBlock">
       <h4>Баланс</h4>
-      <div id="balance" class="mono">—</div>
+      <div id="tokenBalances" class="mono"></div>
     </div>
 
     <div class="walletActions">
@@ -68,19 +63,24 @@
     </div>
   </section>
 
-  <!-- Панель отправки -->
   <section id="sendPanel" class="panel" hidden>
     <h3>Отправить</h3>
-    <label>Токен:
-      <select id="tokenSelect"></select>
-    </label>
-    <input id="recipient" placeholder="Адрес получателя" />
-    <input id="amount" placeholder="Сумма" />
-    <button id="btnSendTx" class="btn primary">🚀 Отправить</button>
-    <div id="txResult" class="mono"></div>
+
+    <label for="tokenSelect" class="token-label">Выберите токен:</label>
+    <div class="token-select-wrapper">
+      <select id="tokenSelect" class="styled-select"></select>
+    </div>
+
+    <div class="amount-wrapper" style="margin-top:10px; display:flex; align-items:center;">
+      <input id="amount" placeholder="Сумма" style="flex:1;" />
+      <button id="btnMax" class="btn">Максимум</button>
+    </div>
+
+    <input id="recipient" placeholder="Адрес получателя" style="margin-top:10px;" />
+    <button id="btnSendTx" class="btn primary" style="margin-top:10px;">🚀 Отправить</button>
+    <div id="txResult" class="mono" style="margin-top:10px;"></div>
   </section>
 
-  <!-- Настройки -->
   <div id="settingsPanel" class="panel" hidden>
     <h3>Настройки</h3>
     <button id="btnShowSeed" class="btn secondary">Показать Seed-фразу</button>

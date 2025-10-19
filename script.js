@@ -24,9 +24,10 @@
   const amountInput = document.getElementById('amount');
   const txResult = document.getElementById('txResult');
   const networkSelect = document.getElementById('networkSelect');
-  const balanceEl = document.getElementById('balance');
-  const btnCopy = document.getElementById('btnCopy');
   const tokenSelect = document.getElementById('tokenSelect');
+  const balanceEl = document.getElementById('tokenBalances');
+  const btnCopy = document.getElementById('btnCopy');
+  const btnMax = document.getElementById('btnMax');
 
   const btnSettings = document.getElementById('btnSettings');
   const settingsPanel = document.getElementById('settingsPanel');
@@ -39,8 +40,21 @@
   const toast = document.getElementById('toast');
 
   let wallet = null;
+  let walletMnemonic = null;
   let pendingWallet = null;
   let walletPassword = '';
+
+  // ===== Лого токенов =====
+  const tokenLogos = {
+    BNB: 'img/bnb.png',
+    USDT: 'img/usdt.png',
+    USDC: 'img/usdc.png'
+  };
+
+  const tokenContracts = {
+    USDT_BSC: '0x55d398326f99059fF775485246999027B3197955',
+    USDC_BSC: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
+  };
 
   // ===== Toast =====
   const showToast = (text) => {
@@ -55,39 +69,99 @@
       ? ethers.getDefaultProvider()
       : new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
 
-  // ===== ERC20/BEP20 токены =====
-  const tokenContracts = {
-    USDT_BSC: '0x55d398326f99059fF775485246999027B3197955',
-    USDC_BSC: '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d',
-  };
-
   // ===== Баланс =====
   const fetchBalance = async () => {
     if (!wallet) return;
-    try {
-      const token = tokenSelect.value;
-      const provider = getProvider();
-      if (token === 'BNB' || token === 'ETH') {
-        const bal = await provider.getBalance(wallet.address);
-        balanceEl.textContent = bal.eq(0) ? 'Нету ничего' : ethers.utils.formatEther(bal) + ' ' + token;
-      } else {
-        const abi = ['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)'];
-        const contract = new ethers.Contract(tokenContracts[token + '_BSC'], abi, provider);
-        const bal = await contract.balanceOf(wallet.address);
-        const decimals = await contract.decimals();
-        balanceEl.textContent = bal.eq(0) ? 'Нету ничего' : ethers.utils.formatUnits(bal, decimals) + ' ' + token;
+
+    const provider = getProvider();
+    const tokens = ['BNB', 'USDT', 'USDC'];
+    const balances = [];
+
+    for (let token of tokens) {
+      try {
+        let balText = '0';
+        if (token === 'BNB') {
+          const bal = await provider.getBalance(wallet.address);
+          balText = bal.isZero() ? '0' : ethers.utils.formatEther(bal);
+        } else {
+          const contractKey = token + '_BSC';
+          if (!tokenContracts[contractKey]) continue;
+
+          const abi = [
+            'function balanceOf(address) view returns (uint256)',
+            'function decimals() view returns (uint8)'
+          ];
+          const contract = new ethers.Contract(tokenContracts[contractKey], abi, provider);
+          const bal = await contract.balanceOf(wallet.address);
+          const decimals = await contract.decimals();
+          balText = bal.isZero() ? '0' : ethers.utils.formatUnits(bal, decimals);
+        }
+
+        balances.push({ token, amount: balText });
+      } catch (e) {
+        console.error(`Ошибка при получении баланса ${token}:`, e);
       }
-    } catch {
-      balanceEl.textContent = 'Нету ничего';
     }
+
+    // ===== Отображение баланса =====
+    balanceEl.innerHTML = '';
+    const networkLabel = networkSelect.value === 'ETH' ? 'ETH' : 'BNB';
+    balances.forEach(({ token, amount }) => {
+      const div = document.createElement('div');
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.marginBottom = '5px';
+      div.innerHTML = `<img src="${tokenLogos[token]}" style="width:20px;height:20px;margin-right:8px;"> ${token}: ${amount} ${networkLabel}`;
+      balanceEl.appendChild(div);
+    });
+
+    // ===== Заполнение select для отправки =====
+    tokenSelect.innerHTML = '';
+    balances.forEach(({ token }) => {
+      const option = document.createElement('option');
+      option.value = token;
+      option.textContent = token;
+      tokenSelect.appendChild(option);
+    });
   };
 
-  // ===== Сохранение кошелька =====
-  const saveWallet = async (password) => {
-    if (!wallet || !password) return;
-    walletPassword = password;
-    const json = await wallet.encrypt(password);
-    localStorage.setItem('MiniWallet', json);
+  // ===== Кнопка Максимум =====
+  btnMax.addEventListener('click', async () => {
+    if (!wallet) return showToast('Сначала создайте кошелёк');
+
+    const selectedToken = tokenSelect.value;
+    const provider = getProvider();
+
+    try {
+      let maxAmount = '0';
+      if (selectedToken === 'BNB') {
+        const bal = await provider.getBalance(wallet.address);
+        maxAmount = ethers.utils.formatEther(bal);
+      } else {
+        const contractKey = selectedToken + '_BSC';
+        if (!tokenContracts[contractKey]) return showToast('Контракт токена не найден');
+
+        const abi = [
+          'function balanceOf(address) view returns (uint256)',
+          'function decimals() view returns (uint8)'
+        ];
+        const contract = new ethers.Contract(tokenContracts[contractKey], abi, provider);
+        const bal = await contract.balanceOf(wallet.address);
+        const decimals = await contract.decimals();
+        maxAmount = ethers.utils.formatUnits(bal, decimals);
+      }
+
+      amountInput.value = maxAmount;
+    } catch (e) {
+      console.error('Ошибка при получении максимального баланса', e);
+      showToast('Ошибка при получении максимального баланса');
+    }
+  });
+
+  // ===== Сохранение сессии =====
+  const saveSessionWallet = () => {
+    if (!wallet) return;
+    sessionStorage.setItem('MiniWalletSession', wallet.privateKey);
   };
 
   // ===== Отображение кошелька =====
@@ -98,54 +172,43 @@
     passwordBlock.style.display = 'none';
     importBlock.style.display = 'none';
     addressEl.textContent = wallet.address;
-
-    tokenSelect.innerHTML = '';
-    const options = ['BNB', 'USDT', 'USDC'];
-    options.forEach((t) => {
-      const o = document.createElement('option');
-      o.value = t;
-      o.textContent = t;
-      tokenSelect.appendChild(o);
-    });
-
     fetchBalance();
     setInterval(fetchBalance, 10000);
   };
 
-  // ===== Создание нового кошелька =====
+  // ===== Создание и импорт =====
   btnNew.addEventListener('click', () => {
-    importBlock.style.display = 'none';
-    passwordBlock.style.display = 'block';
     pendingWallet = ethers.Wallet.createRandom();
+    walletMnemonic = pendingWallet.mnemonic.phrase;
+    passwordBlock.style.display = 'block';
   });
 
-  btnConfirmPassword.addEventListener('click', async () => {
+  btnConfirmPassword.addEventListener('click', () => {
     const pw1 = newPassword.value.trim();
     const pw2 = repeatPassword.value.trim();
     if (pw1.length < 8) return alert('Пароль минимум 8 символов');
     if (pw1 !== pw2) return alert('Пароли не совпадают!');
     wallet = pendingWallet;
     pendingWallet = null;
+    walletPassword = pw1;
     loadingBlock.hidden = false;
-    await saveWallet(pw1);
+    saveSessionWallet();
     showWallet();
   });
 
-  // ===== Импорт кошелька =====
   btnImport.addEventListener('click', () => {
     passwordBlock.style.display = 'none';
     importBlock.style.display = 'block';
   });
 
-  btnImportCancel.addEventListener('click', () => {
-    importBlock.style.display = 'none';
-  });
+  btnImportCancel.addEventListener('click', () => { importBlock.style.display = 'none'; });
 
   btnImportConfirm.addEventListener('click', () => {
     const phrase = importSeed.value.trim();
     if (!phrase) return alert('Введите seed-фразу!');
     try {
       pendingWallet = ethers.Wallet.fromMnemonic(phrase);
+      walletMnemonic = phrase;
       importBlock.style.display = 'none';
       passwordBlock.style.display = 'block';
     } catch {
@@ -156,55 +219,56 @@
   // ===== Копирование адреса =====
   btnCopy.addEventListener('click', () => {
     if (!wallet) return;
-    navigator.clipboard.writeText(wallet.address).then(() => {
-      showToast(`Адрес ${wallet.address} скопирован ✅`);
-    });
+    navigator.clipboard.writeText(wallet.address).then(() => { showToast('✅ Адрес скопирован'); });
   });
 
-  // ===== Показ панели отправки =====
+  // ===== Переключение панели отправки =====
   btnSend.addEventListener('click', () => {
     if (!wallet) return alert('Создайте кошелёк');
-    sendPanel.hidden = !sendPanel.hidden;
-  });
 
-  // ===== Отправка транзакций =====
-  btnSendTx.addEventListener('click', async () => {
-    if (!wallet) return alert('Создайте кошелёк');
-    const to = recipientInput.value.trim();
-    const amount = amountInput.value.trim();
-    if (!to || !amount) return alert('Заполните все поля');
-    txResult.textContent = 'Отправка...';
-    try {
-      const provider = getProvider();
-      const w = wallet.connect(provider);
-      const token = tokenSelect.value;
+    if (!settingsPanel.hidden) {
+      settingsPanel.classList.add('animate-show');
+      setTimeout(() => {
+        settingsPanel.hidden = true;
+        secretDisplay.textContent = '';
+      }, 300);
+    }
 
-      if (token === 'BNB' || token === 'ETH') {
-        const tx = await w.sendTransaction({ to, value: ethers.utils.parseEther(amount) });
-        await tx.wait();
-        txResult.textContent = `Отправлено! TxHash: ${tx.hash}`;
-      } else {
-        const abi = ['function transfer(address to,uint256 amount) returns (bool)', 'function decimals() view returns (uint8)'];
-        const contract = new ethers.Contract(tokenContracts[token + '_BSC'], abi, w);
-        const decimals = await contract.decimals();
-        const bigAmount = ethers.utils.parseUnits(amount, decimals);
-        const tx = await contract.transfer(to, bigAmount);
-        await tx.wait();
-        txResult.textContent = `Отправлено! TxHash: ${tx.hash}`;
-      }
-
-      fetchBalance();
-    } catch (e) {
-      console.error(e);
-      txResult.textContent = 'Ошибка отправки';
+    if (sendPanel.hidden) {
+      sendPanel.hidden = false;
+      btnSend.classList.add('animate-btn','show');
+      sendPanel.classList.add('animate-show');
+    } else {
+      sendPanel.classList.add('animate-show');
+      setTimeout(() => {
+        sendPanel.hidden = true;
+        btnSend.classList.remove('show');
+      }, 300);
     }
   });
 
-  networkSelect.addEventListener('change', fetchBalance);
-  tokenSelect.addEventListener('change', fetchBalance);
+  // ===== Переключение панели настроек =====
+  btnSettings.addEventListener('click', () => {
+    if (!sendPanel.hidden) {
+      sendPanel.classList.add('animate-show');
+      setTimeout(() => {
+        sendPanel.hidden = true;
+        btnSend.classList.remove('show');
+      }, 300);
+    }
 
-  // ===== Настройки =====
-  btnSettings.addEventListener('click', () => (settingsPanel.hidden = false));
+    if (settingsPanel.hidden) {
+      settingsPanel.hidden = false;
+      settingsPanel.classList.add('animate-show');
+    } else {
+      settingsPanel.classList.add('animate-show');
+      setTimeout(() => {
+        settingsPanel.hidden = true;
+        secretDisplay.textContent = '';
+      }, 300);
+    }
+  });
+
   btnCloseSettings.addEventListener('click', () => {
     settingsPanel.hidden = true;
     secretDisplay.textContent = '';
@@ -213,52 +277,36 @@
   btnLogout.addEventListener('click', () => {
     if (!confirm('Вы уверены?')) return;
     wallet = null;
+    walletMnemonic = null;
+    sessionStorage.removeItem('MiniWalletSession');
     walletPanel.hidden = true;
     sendPanel.hidden = true;
     settingsPanel.hidden = true;
     startControls.hidden = false;
     passwordBlock.style.display = 'none';
     importBlock.style.display = 'none';
-    localStorage.removeItem('MiniWallet');
     showToast('Вы вышли из кошелька');
   });
 
   btnShowSeed.addEventListener('click', () => {
-    const pw = prompt('Введите пароль чтобы показать seed:');
-    if (!pw) return;
-    const json = localStorage.getItem('MiniWallet');
-    if (!json) return alert('Нет кошелька');
-    ethers.Wallet.fromEncryptedJson(json, pw)
-      .then((w) => {
-        secretDisplay.textContent = 'Seed: ' + w.mnemonic?.phrase;
-      })
-      .catch(() => alert('Неверный пароль'));
+    if (!wallet) return alert('Нет кошелька');
+    const pw = prompt('Введите пароль для просмотра Seed-фразы:');
+    if (pw !== walletPassword) return alert('Неверный пароль!');
+    secretDisplay.textContent = 'Seed: ' + walletMnemonic;
   });
 
   btnShowPK.addEventListener('click', () => {
-    const pw = prompt('Введите пароль чтобы показать приватный ключ:');
-    if (!pw) return;
-    const json = localStorage.getItem('MiniWallet');
-    if (!json) return alert('Нет кошелька');
-    ethers.Wallet.fromEncryptedJson(json, pw)
-      .then((w) => {
-        secretDisplay.textContent = 'Private Key: ' + w.privateKey;
-      })
-      .catch(() => alert('Неверный пароль'));
+    if (!wallet) return alert('Нет кошелька');
+    const pw = prompt('Введите пароль для просмотра приватного ключа:');
+    if (pw !== walletPassword) return alert('Неверный пароль!');
+    secretDisplay.textContent = 'Private Key: ' + wallet.privateKey;
   });
 
-  // ===== Авторазблокировка =====
-  const savedWallet = localStorage.getItem('MiniWallet');
-  if (savedWallet) {
-    const pw = prompt('Введите пароль для авторазблокировки кошелька:');
-    if (pw) {
-      ethers.Wallet.fromEncryptedJson(savedWallet, pw)
-        .then((w) => {
-          wallet = w;
-          walletPassword = pw;
-          showWallet();
-        })
-        .catch(() => console.log('Неверный пароль для авторазблокировки'));
-    }
+  const sessionPK = sessionStorage.getItem('MiniWalletSession');
+  if (sessionPK) {
+    wallet = new ethers.Wallet(sessionPK);
+    walletPassword = prompt('Введите пароль для авторазблокировки кошелька:');
+    showWallet();
   }
+
 })();
