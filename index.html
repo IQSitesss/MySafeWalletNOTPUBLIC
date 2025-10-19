@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MySafeWallet</title>
+  <title>MiniMetaWallet</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
 <main class="card">
-  <h1>MySafeWallet</h1>
+  <h1>MiniMetaWallet</h1>
   <p class="muted">Локальный Ethereum / BNB кошелёк. Приватные ключи не покидают браузер.</p>
 
   <!-- Основные действия -->
@@ -24,13 +24,19 @@
       <input id="repeatPassword" type="password" placeholder="Повторите пароль" />
       <button id="btnConfirmPassword" class="btn primary">Продолжить</button>
     </div>
+
+    <!-- Импорт -->
+    <div id="importBlock" style="margin-top:15px; display:none;">
+      <textarea id="importSeed" placeholder="Введите seed-фразу"></textarea>
+      <button id="btnImportConfirm" class="btn primary">Импортировать</button>
+      <button id="btnImportCancel" class="btn secondary">Отмена</button>
+    </div>
   </div>
 
-  <!-- Импорт кошелька -->
-  <div id="importBlock" style="margin-top:15px; display:none;">
-    <textarea id="importSeed" placeholder="Введите seed-фразу"></textarea>
-    <button id="btnImportConfirm" class="btn primary">Импортировать</button>
-    <button id="btnImportCancel" class="btn secondary">Отмена</button>
+  <!-- Загрузка -->
+  <div id="loadingBlock" class="panel" hidden>
+    <h3>Ожидайте…</h3>
+    <div class="loader"></div>
   </div>
 
   <!-- Панель кошелька -->
@@ -52,17 +58,12 @@
       <button id="btnSettings" class="btn secondary">⚙️ Настройки</button>
     </div>
 
-    <h4>Seed-фраза</h4>
-    <div id="mnemonic" class="mnemonic">—</div>
-    <button id="btnReveal" class="btn small">Скрыть seed</button>
-
     <div class="balanceBlock">
       <h4>Баланс</h4>
       <div id="balance" class="mono">—</div>
     </div>
 
     <div class="walletActions">
-      <button id="btnShowPK" class="btn secondary">🔑 Приватный ключ</button>
       <button id="btnSend" class="btn primary">💸 Отправить</button>
     </div>
   </section>
@@ -79,8 +80,11 @@
   <!-- Настройки -->
   <div id="settingsPanel" class="panel" hidden>
     <h3>Настройки</h3>
+    <button id="btnShowSeed" class="btn secondary">Показать Seed-фразу</button>
+    <button id="btnShowPK" class="btn secondary">Показать Приватный ключ</button>
     <button id="btnLogout" class="btn warn">🚪 Выйти из кошелька</button>
     <button id="btnCloseSettings" class="btn secondary">Закрыть</button>
+    <div id="secretDisplay" class="mono" style="margin-top:10px;"></div>
   </div>
 
 </main>

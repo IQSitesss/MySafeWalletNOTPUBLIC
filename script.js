@@ -1,9 +1,7 @@
 (() => {
   const { ethers } = window;
 
-  // ======================
-  // DOM
-  // ======================
+  // ===== DOM =====
   const btnNew = document.getElementById('btnNew');
   const btnImport = document.getElementById('btnImport');
   const startControls = document.getElementById('startControls');
@@ -15,13 +13,13 @@
   const importSeed = document.getElementById('importSeed');
   const btnImportConfirm = document.getElementById('btnImportConfirm');
   const btnImportCancel = document.getElementById('btnImportCancel');
+  const loadingBlock = document.getElementById('loadingBlock');
 
   const walletPanel = document.getElementById('walletPanel');
   const sendPanel = document.getElementById('sendPanel');
   const addressEl = document.getElementById('address');
   const mnemonicEl = document.getElementById('mnemonic');
   const btnReveal = document.getElementById('btnReveal');
-  const btnShowPK = document.getElementById('btnShowPK');
   const btnSend = document.getElementById('btnSend');
   const btnSendTx = document.getElementById('btnSendTx');
   const recipientInput = document.getElementById('recipient');
@@ -30,76 +28,68 @@
   const networkSelect = document.getElementById('networkSelect');
   const balanceEl = document.getElementById('balance');
   const btnCopy = document.getElementById('btnCopy');
+
   const btnSettings = document.getElementById('btnSettings');
   const settingsPanel = document.getElementById('settingsPanel');
   const btnLogout = document.getElementById('btnLogout');
   const btnCloseSettings = document.getElementById('btnCloseSettings');
+  const btnShowSeed = document.getElementById('btnShowSeed');
+  const btnShowPK = document.getElementById('btnShowPK');
+  const secretDisplay = document.getElementById('secretDisplay');
+
   const toast = document.getElementById('toast');
 
   let wallet = null;
   let pendingWallet = null;
   let reveal = true;
 
-  // ======================
-  // Toast
-  // ======================
-  function showToast(text){
+  // ===== Toast =====
+  const showToast = (text) => {
     toast.textContent=text;
     toast.classList.add('show');
     setTimeout(()=>toast.classList.remove('show'),2000);
-  }
+  };
 
-  // ======================
-  // Провайдер и баланс
-  // ======================
-  function getProvider(){
-    return networkSelect.value==='ETH'
-      ? ethers.getDefaultProvider()
-      : new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
-  }
+  // ===== Provider =====
+  const getProvider = ()=> networkSelect.value==='ETH'
+    ? ethers.getDefaultProvider()
+    : new ethers.providers.JsonRpcProvider('https://bsc-dataseed.binance.org/');
 
-  async function fetchBalance(){
+  const fetchBalance = async ()=>{
     if(!wallet) return;
-    balanceEl.textContent='Загрузка...';
     try{
       const bal = await getProvider().getBalance(wallet.address);
-      balanceEl.textContent = `${ethers.utils.formatEther(bal)} ${networkSelect.value}`;
-    }catch{ balanceEl.textContent='Ошибка'; }
-  }
+      balanceEl.textContent = (bal.eq(0)?'Нету ничего':ethers.utils.formatEther(bal)+' '+networkSelect.value);
+    }catch{ balanceEl.textContent='Нету ничего'; }
+  };
 
-  // ======================
-  // Сохранение
-  // ======================
-  async function saveWallet(password){
+  const saveWallet = async (password)=>{
     if(!wallet || !password) return;
     const json = await wallet.encrypt(password);
     localStorage.setItem('MiniWallet',json);
-  }
+  };
 
-  // ======================
-  // Показ кошелька
-  // ======================
-  function setMnemonicVisible(flag){
+  const setMnemonicVisible = (flag)=>{
     reveal = flag;
     if(!wallet) return;
     mnemonicEl.textContent = reveal ? wallet.mnemonic?.phrase || '—' : '•••••••• •••••••• ••••••••';
     btnReveal.textContent = reveal ? 'Скрыть seed' : 'Показать seed';
-  }
+  };
 
-  function showWallet(){
-    walletPanel.hidden=false;
-    startControls.hidden=true;
+  const showWallet = ()=>{
+    loadingBlock.hidden = true;
+    walletPanel.hidden = false;
+    startControls.hidden = true;
     passwordBlock.style.display='none';
     importBlock.style.display='none';
-    addressEl.textContent=wallet.address;
+    addressEl.textContent = wallet.address;
     setMnemonicVisible(true);
     fetchBalance();
-  }
+  };
 
-  // ======================
-  // Создание кошелька
-  // ======================
+  // ===== Создать =====
   btnNew.addEventListener('click', ()=>{
+    importBlock.style.display='none';
     pendingWallet = ethers.Wallet.createRandom();
     passwordBlock.style.display='block';
   });
@@ -111,38 +101,38 @@
     if(pw1!==pw2)return alert('Пароли не совпадают!');
     wallet=pendingWallet;
     pendingWallet=null;
+    loadingBlock.hidden=false;
     await saveWallet(pw1);
     showWallet();
   });
 
-  // ======================
-  // Импорт кошелька
-  // ======================
+  // ===== Импорт =====
   btnImport.addEventListener('click', ()=>{
-    importBlock.style.display='block';
     passwordBlock.style.display='none';
+    importBlock.style.display='block';
   });
+
   btnImportCancel.addEventListener('click', ()=>{ importBlock.style.display='none'; });
+
   btnImportConfirm.addEventListener('click', ()=>{
-    const phrase=importSeed.value.trim();
+    const phrase = importSeed.value.trim();
     if(!phrase) return alert('Введите seed-фразу!');
     try{
-      pendingWallet=ethers.Wallet.fromMnemonic(phrase);
+      pendingWallet = ethers.Wallet.fromMnemonic(phrase);
       importBlock.style.display='none';
       passwordBlock.style.display='block';
     }catch{ alert('Неверная seed-фраза!'); }
   });
 
-  // ======================
-  // Остальной функционал
-  // ======================
+  // ===== Остальной функционал =====
   btnCopy.addEventListener('click', ()=>{
     if(!wallet) return;
     navigator.clipboard.writeText(wallet.address);
     showToast('Адрес скопирован ✅');
   });
-  btnShowPK.addEventListener('click', ()=>wallet?alert(wallet.privateKey):alert('Создайте кошелёк'));
+
   btnSend.addEventListener('click', ()=>sendPanel.hidden=!sendPanel.hidden);
+
   btnSendTx.addEventListener('click', async ()=>{
     if(!wallet) return alert('Создайте кошелёк');
     const to=recipientInput.value.trim();
@@ -158,10 +148,10 @@
   });
 
   networkSelect.addEventListener('change', fetchBalance);
-  btnReveal.addEventListener('click', ()=>setMnemonicVisible(!reveal));
 
   btnSettings.addEventListener('click', ()=>settingsPanel.hidden=false);
-  btnCloseSettings.addEventListener('click', ()=>settingsPanel.hidden=true);
+  btnCloseSettings.addEventListener('click', ()=>{ settingsPanel.hidden=true; secretDisplay.textContent=''; });
+
   btnLogout.addEventListener('click', ()=>{
     if(!confirm('Вы уверены?')) return;
     wallet=null;
@@ -174,9 +164,28 @@
     showToast('Вы вышли из кошелька');
   });
 
-  // ======================
-  // Авторазблокировка
-  // ======================
+  // ===== Seed и PK в настройки =====
+  btnShowSeed.addEventListener('click', ()=>{
+    const pw = prompt('Введите пароль чтобы показать seed:');
+    if(!pw) return;
+    const json = localStorage.getItem('MiniWallet');
+    if(!json) return alert('Нет кошелька');
+    ethers.Wallet.fromEncryptedJson(json,pw).then(w=>{
+      secretDisplay.textContent = 'Seed: '+w.mnemonic?.phrase;
+    }).catch(()=>alert('Неверный пароль'));
+  });
+
+  btnShowPK.addEventListener('click', ()=>{
+    const pw = prompt('Введите пароль чтобы показать приватный ключ:');
+    if(!pw) return;
+    const json = localStorage.getItem('MiniWallet');
+    if(!json) return alert('Нет кошелька');
+    ethers.Wallet.fromEncryptedJson(json,pw).then(w=>{
+      secretDisplay.textContent = 'Private Key: '+w.privateKey;
+    }).catch(()=>alert('Неверный пароль'));
+  });
+
+  // ===== Авторазблокировка =====
   const savedWallet = localStorage.getItem('MiniWallet');
   if(savedWallet){
     const pw = prompt("Введите пароль для разблокировки кошелька:");
